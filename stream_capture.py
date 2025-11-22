@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -33,11 +36,15 @@ class StreamCapture:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         
-        # Set window size
+        # Set window size and position (move off-screen)
         chrome_options.add_argument("--window-size=640,480")
+        chrome_options.add_argument("--window-position=-2000,-2000")
         
         service = Service(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+        # Move window off-screen after creation
+        self.driver.set_window_position(-2000, -2000)
         
     def start(self, wait_time=5):
         """Start the stream capture"""
@@ -45,7 +52,70 @@ class StreamCapture:
         self.setup_browser()
         self.driver.get(self.stream_url)
         
-        print(f"Waiting {wait_time} seconds for stream to load...")
+        print("Waiting for stream to load...")
+        time.sleep(3)
+        
+        # Try to auto-click play button if it exists
+        try:
+            print("Attempting to find and click play button...")
+            wait = WebDriverWait(self.driver, 10)
+            
+            # VDO.Ninja specific - try to find video element and any overlays
+            try:
+                # First, try to click on the entire page body to trigger play
+                body = self.driver.find_element(By.TAG_NAME, "body")
+                body.click()
+                print("Clicked page body")
+                time.sleep(1)
+            except:
+                pass
+            
+            # Try to find and play video element directly
+            try:
+                video_elements = self.driver.find_elements(By.TAG_NAME, "video")
+                for video in video_elements:
+                    try:
+                        # Use JavaScript to play the video
+                        self.driver.execute_script("""
+                            arguments[0].play();
+                            arguments[0].muted = false;
+                        """, video)
+                        print(f"Video element played via JavaScript!")
+                        time.sleep(1)
+                    except Exception as e:
+                        print(f"Could not play video: {e}")
+            except:
+                pass
+            
+            # Try clicking common play button patterns
+            play_selectors = [
+                (By.CSS_SELECTOR, "button.play"),
+                (By.CSS_SELECTOR, "button[aria-label*='play' i]"),
+                (By.CSS_SELECTOR, "div.play-button"),
+                (By.XPATH, "//button[contains(text(), 'Play')]"),
+                (By.XPATH, "//button[contains(text(), 'play')]"),
+                (By.XPATH, "//*[contains(@class, 'play')]"),
+                (By.CSS_SELECTOR, ".video-overlay"),
+                (By.ID, "container"),
+            ]
+            
+            for by_type, selector in play_selectors:
+                try:
+                    elements = self.driver.find_elements(by_type, selector)
+                    for element in elements:
+                        try:
+                            element.click()
+                            print(f"Clicked element: {selector}")
+                            time.sleep(0.5)
+                        except:
+                            pass
+                except:
+                    continue
+                    
+        except Exception as e:
+            print(f"Auto-play attempt finished: {e}")
+        
+        print(f"Waiting additional {wait_time} seconds...")
         time.sleep(wait_time)
         
         self.is_running = True

@@ -22,7 +22,7 @@ def main():
     
     try:
         # Start the stream
-        stream.start(wait_time=5)
+        stream.start(wait_time=0)
         
         print("\nStream loaded! Press 'q' to quit, 's' to save snapshot")
         print("Detecting coins...\n")

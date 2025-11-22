@@ -23,6 +23,14 @@ coinCount/
 
 ## Requirements
 
+Install all dependencies using the requirements file:
+
+```bash
+pip install -r requirements.txt
+```
+
+Or install manually:
+
 ```bash
 pip install opencv-python numpy selenium webdriver-manager pillow
 ```
