@@ -3,7 +3,7 @@ import time
 from stream_capture import StreamCapture
 from coin_processing import CoinProcessor
 
-# VDO.Ninja stream ID
+# VDO.Ninja stream ID   
 VIEW_ID = "Tk89sNbS"
 
 def main():
@@ -15,9 +15,8 @@ def main():
     
     # Initialize coin processor
     processor = CoinProcessor(
-        min_dist=80,
-        min_radius=15,
-        max_radius=80
+        blur=15,
+        show_contours=False
     )
     
     try:
@@ -50,6 +49,9 @@ def main():
             if key == ord('q'):
                 print("\nQuitting...")
                 break
+            elif key == ord('c'):
+                processor.show_contours = not processor.show_contours
+                print(f"Show contours: {processor.show_contours}")
             elif key == ord('s'):
                 filename = f'coin_snapshot.jpg'
                 cv2.imwrite(filename, processed_frame)
