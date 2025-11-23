@@ -17,21 +17,12 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-For better camera detection on Windows (optional):
-```bash
-pip install pyusbcameraindex
-```
-
 ## Usage
-
-Run the detector:
-```bash
-python main.py
-```
 
 You'll be prompted to choose between:
 - Local camera (webcam/USB camera)
 - VDO.Ninja remote stream
+
 
 ### Keyboard controls
 - `q` - quit
@@ -89,8 +80,6 @@ The stream capture automatically:
 
 ## Troubleshooting
 
-**No cameras detected**: Install `pyusbcameraindex` or check camera connections
-
 **VDO.Ninja not playing**: Increase wait time in `stream_capture.py`
 
 **False detections**: Increase circularity threshold or minimum area
@@ -99,6 +88,3 @@ The stream capture automatically:
 
 **Slow performance**: Lower frame rate (increase sleep time in main loop)
 
-## License
-
-MIT
