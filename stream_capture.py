@@ -46,7 +46,7 @@ class StreamCapture:
         # Move window off-screen after creation
         self.driver.set_window_position(-2000, -2000)
         
-    def start(self, wait_time=5):
+    def start(self):
         """Start the stream capture"""
         print(f"Opening stream: {self.stream_url}")
         self.setup_browser()
@@ -114,9 +114,6 @@ class StreamCapture:
                     
         except Exception as e:
             print(f"Auto-play attempt finished: {e}")
-        
-        print(f"Waiting additional {wait_time} seconds...")
-        time.sleep(wait_time)
         
         self.is_running = True
         print("Stream capture started!")

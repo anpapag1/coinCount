@@ -1,112 +1,103 @@
 # Coin Counter
 
-A real-time coin detection system that works with both static images and live video streams.
+Real-time coin detection using OpenCV. Works with webcams, USB cameras, or VDO.Ninja streams.
 
-## Features
+## What it does
 
-- **Real-time coin detection** from VDO.Ninja video streams
-- **Static image analysis** with contour-based circular detection
-- **Multiple detection methods**: HoughCircles and contour circularity
-- **Visual feedback** with bounding boxes and coin count overlay
-- **Snapshot capture** during live streaming
+Detects circular coins in a video feed and counts them in real-time. Uses contour detection with circularity filtering to identify coins and draws bounding boxes around them.
 
-## Project Structure
+## How I built it
 
-```
-coinCount/
-├── main.py                 # Main application for stream-based detection
-├── stream_capture.py       # VDO.Ninja stream capture using Selenium
-├── coin_processing.py      # HoughCircles-based coin detection
-├── coin_count_test.py      # Static image testing with contour detection
-└── coin_test/              # Test images directory
-```
+The basic coin detection approach was inspired by [this YouTube tutorial](https://www.youtube.com/watch?v=XZ3PNnA9NbU), though I adapted the code for my specific use case with streaming support and different detection parameters.
 
-## Requirements
+## Setup
 
-Install all dependencies using the requirements file:
-
+Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-Or install manually:
-
+For better camera detection on Windows (optional):
 ```bash
-pip install opencv-python numpy selenium webdriver-manager pillow
+pip install pyusbcameraindex
 ```
 
 ## Usage
 
-### Live Stream Detection
-
-Run the main application to detect coins from a live VDO.Ninja stream:
-
+Run the detector:
 ```bash
 python main.py
 ```
 
-**Controls:**
-- Press `q` to quit
-- Press `s` to save a snapshot
+You'll be prompted to choose between:
+- Local camera (webcam/USB camera)
+- VDO.Ninja remote stream
 
-### Static Image Testing
+### Keyboard controls
+- `q` - quit
+- `s` - save snapshot
+- `c` - toggle contour visualization
 
-Test coin detection on static images:
+### Preset configuration
 
-```bash
-python coin_count_test.py
-```
-
-## Detection Methods
-
-### 1. HoughCircles Method (`coin_processing.py`)
-- Uses OpenCV's HoughCircles algorithm
-- Best for clean, well-separated coins
-- Adjustable parameters: `min_dist`, `min_radius`, `max_radius`
-
-### 2. Contour Circularity Method (`coin_count_test.py`)
-- Detects contours and filters by circularity formula: **4πA/P²**
-- More flexible for various lighting conditions
-- Circularity threshold: 0.7 (adjustable)
-
-## Configuration
-
-### Stream Settings
-Edit `main.py` to change the VDO.Ninja stream ID:
+Skip the prompts by editing `main.py`:
 ```python
-VIEW_ID = "your_stream_id"
+# For camera
+mode, source = get_stream_source(mode='camera', source=0)
+
+# For VDO.Ninja
+mode, source = get_stream_source(mode='vdo_ninja', source='your_stream_id')
 ```
 
-### Detection Parameters
+## Project structure
 
-**HoughCircles (coin_processing.py):**
+```
+main.py              - Main application
+stream_picker.py     - Interactive source selection
+camera_capture.py    - Webcam/USB camera handler
+stream_capture.py    - VDO.Ninja stream handler (auto-play, hidden browser)
+coin_processing.py   - Coin detection algorithm
+coin_count_test.py   - Static image testing
+```
+
+## How it works
+
+1. **Preprocessing**: Convert to grayscale → Gaussian blur → Otsu's threshold
+2. **Detection**: Find contours and filter by circularity (4πA/P²)
+3. **Filtering**: Only keep shapes with circularity > 0.7 and area > 100px
+4. **Display**: Draw bounding boxes and show coin count
+
+### Detection parameters
+
+Edit `coin_processing.py` or pass to the processor:
 ```python
 processor = CoinProcessor(
-    min_dist=80,      # Minimum distance between coins
-    min_radius=15,    # Minimum coin radius
-    max_radius=80     # Maximum coin radius
+    blur=15,              # Gaussian blur strength
+    show_contours=False   # Show all detected contours
 )
 ```
 
-**Contour Method (coin_count_test.py):**
-```python
-circularity_threshold = 0.7  # 0.0-1.0 (1.0 = perfect circle)
-min_area = 100               # Minimum contour area
-```
+Circularity threshold: `0.7` (adjust in `coin_processing.py`)  
+Minimum area: `100` pixels
 
-## How It Works
+## VDO.Ninja features
 
-1. **Image Preprocessing**: Grayscale conversion → Gaussian blur → Thresholding
-2. **Feature Detection**: Circle/contour detection with filtering
-3. **Visualization**: Bounding boxes, circles, and coin count overlay
-4. **Real-time Processing**: ~30 FPS for live streams
+The stream capture automatically:
+- Opens Chrome in hidden mode (off-screen window)
+- Clicks the play button
+- Captures frames at ~30fps
 
 ## Troubleshooting
 
-- **Stream not loading**: Check VDO.Ninja VIEW_ID and internet connection
-- **False detections**: Adjust circularity threshold or HoughCircles parameters
-- **Missing coins**: Increase blur kernel size or adjust threshold values
-- **Performance issues**: Reduce frame processing rate in `main.py`
+**No cameras detected**: Install `pyusbcameraindex` or check camera connections
+
+**VDO.Ninja not playing**: Increase wait time in `stream_capture.py`
+
+**False detections**: Increase circularity threshold or minimum area
+
+**Missing coins**: Decrease thresholds, increase blur, or improve lighting
+
+**Slow performance**: Lower frame rate (increase sleep time in main loop)
 
 ## License
 

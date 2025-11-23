@@ -1,64 +1,58 @@
 import cv2
 import time
+from camera_capture import CameraCapture
 from stream_capture import StreamCapture
 from coin_processing import CoinProcessor
-
-# VDO.Ninja stream ID   
-VIEW_ID = "Tk89sNbS"
+from stream_picker import get_stream_source
 
 def main():
-    print("VDO.Ninja Coin Detector")
+    print("Coin Detector")
     print("=" * 50)
     
-    # Initialize stream capture
-    stream = StreamCapture(VIEW_ID)
+    # Get stream source (set mode"camera/vdo_ninja",source"index/id" to bypass prompt)
+    mode, source = get_stream_source()
     
-    # Initialize coin processor
-    processor = CoinProcessor(
-        blur=15,
-        show_contours=False
-    )
+    if not mode or source is None:
+        print("No stream source selected.")
+        return
+    
+    # Setup capture
+    if mode == 'camera':
+        stream = CameraCapture(camera_index=source)
+    elif mode == 'vdo_ninja':
+        stream = StreamCapture(view_id=source)
+    else:
+        print(f"Unknown mode: {mode}")
+        return
+    
+    processor = CoinProcessor(blur=15, show_contours=False)
     
     try:
-        # Start the stream
-        stream.start(wait_time=0)
-        
-        print("\nStream loaded! Press 'q' to quit, 's' to save snapshot")
-        print("Detecting coins...\n")
+        stream.start()
+        print("\nPress 'q' to quit, 's' to save snapshot, 'c' to toggle contours\n")
                 
         while True:
-            # Get frame from stream
             frame = stream.get_frame()
-            
             if frame is None:
-                print("Failed to get frame")
                 break
-                        
+            
             # Process frame to detect coins
-            coins, processed_frame = processor.detect_coins(frame)
+            coins, processed = processor.detect_coins(frame)
+            # Add overlay with coin count
+            processor.add_info_overlay(processed, len(coins))
             
-            # Add info overlay
-            processor.add_info_overlay(processed_frame, len(coins))
+            cv2.imshow('Coin Detector', processed)
             
-            # Display the processed frame
-            cv2.imshow('Coin Detector', processed_frame)
-            
-            # Handle keyboard input
             key = cv2.waitKey(1) & 0xFF
-            
             if key == ord('q'):
-                print("\nQuitting...")
                 break
             elif key == ord('c'):
                 processor.show_contours = not processor.show_contours
-                print(f"Show contours: {processor.show_contours}")
             elif key == ord('s'):
-                filename = f'coin_snapshot.jpg'
-                cv2.imwrite(filename, processed_frame)
-                print(f"Snapshot saved: {filename}")
+                cv2.imwrite('coin_snapshot.jpg', processed)
+                print("Snapshot saved")
             
-            # Small delay to control frame rate
-            time.sleep(0.033)  # ~30 fps
+            time.sleep(0.033)
         
     except Exception as e:
         print(f"\nError: {e}")
